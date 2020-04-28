@@ -1,19 +1,21 @@
 {
   "expo": {
-    "name": "Spotify",
+    "scheme": "spotify",
+    "name": "Ox",
     "slug": "Spotify",
+    "privacy": "public",
     "platforms": [
       "ios",
       "android",
       "web"
     ],
-    "version": "1.0.0",
+    "version": "1.0.8",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/Icon1024.jpg",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -23,9 +25,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "infoPlist": {
-        "LSApplicationQueriesSchemes": ["spotify", "firebase"]
-      }
+      "bundleIdentifier": "com.jdnvn.ox"
     }
   }
 }
