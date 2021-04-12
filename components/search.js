@@ -1,24 +1,47 @@
 import React, { Component } from 'react';
-import { AppRegistry, StyleSheet, Text, View, TextInput, Dimensions, Button, Image, AsyncStorage, ScrollView, FlatList, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { AppRegistry, StyleSheet, Text, View, TextInput, Dimensions, Button, Image, AsyncStorage, ScrollView, FlatList, TouchableWithoutFeedback, Keyboard, TouchableOpacity, SafeAreaView } from 'react-native';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Login from './login';
-import {getUserData} from './login'
+import {getUserData, getValidSPObj} from './login'
 import Following from './following';
 import {follow} from './profile'
 import db from '../database';
 import { SearchBar, ListItem } from 'react-native-elements';
 import GradientButton from 'react-native-gradient-buttons';
+import { TouchableHighlight } from 'react-native-gesture-handler';
+
+
+export const FollowButton = ({userId, me}) =>{
+    let following = false
+    db.ref().child("Users/"+me+"/following").orderByValue().equalTo(userId).on("value", snapshot => {
+        if(snapshot.exists()){
+            following = true
+        }
+    })
+
+    return following ? (<TouchableOpacity onPress = {() => {follow(userId)}}>
+                        <View style = {styles.followingbutton}>
+                            <Text style = {{color: 'black', fontSize: 15, fontWeight: "700"}}>Following</Text>
+                        </View>
+                        </TouchableOpacity>)
+                        : (<TouchableOpacity onPress = {() => {follow(userId)}}>
+                            <View style = {styles.followbutton}>
+                                <Text style = {{color: '#4254f5', fontSize: 15, fontWeight: "700"}}>Follow</Text>
+                            </View>
+                            </TouchableOpacity>);
+}
 
 export default class Search extends Component {
     state = {
         search: '',
     };
 
+
     async componentDidMount() {
         this.setState({userId: await getUserData("userId")})
     }
 
-    updateSearch = search => {
+    updateSearch = async search => {
         this.setState({search: search});
         
         let queried = []
@@ -35,28 +58,22 @@ export default class Search extends Component {
         this.setState({data: queried})
     };
 
+    goToProfile = (userId) => {
+        this.props.navigation.navigate('Userprofile', { userId: userId, me: this.state.userId })
+    }
+
     renderItems = ({item}) =>
       <ListItem 
         containerStyle = {styles.listItem}
+        component={TouchableHighlight}
         title={item.display_name} 
         titleStyle={styles.listTitle}
         leftAvatar={{source: {uri: item.profile_pic}}}
+        onPress={() => this.goToProfile(item.userId)}
         bottomDivider
         topDivider
-        rightElement={
-            <GradientButton
-                    gradientBegin='#32a852'
-                    gradientEnd='#72c46e'
-                    gradientDirection='diagonal'
-                    text = 'Follow'
-                    height={40}
-                    width={90}
-                    impact
-                    impactStyle='Light'
-                    textStyle={{fontSize: 15}}
-                    onPressAction={() => follow(item.userId)}
-                />
-        }
+        // rightElement={<FollowButton userId={item.userId} me={this.state.userId}></FollowButton>}
+
       />
 
     cancelSearch = () => {
@@ -65,34 +82,60 @@ export default class Search extends Component {
 
     render() {
         const {search} = this.state.search
-
+        const scrollEnabled = this.state.screenHeight
         return (
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View>
+            <ScrollView>
                 <SearchBar
-                    placeholder="Search for a user"
+                    placeholder="Search for a friend"
                     onChangeText={text => this.updateSearch(text)}
                     onCancel={this.cancelSearch}
                     value={this.state.search}
+                    containerStyle={styles.search}
+                    inputStyle={styles.searchinput}
                 />
                 <FlatList
                     data={this.state.data}
                     renderItem={this.renderItems}
                 />
-                </View>
-            </TouchableWithoutFeedback>
+            </ScrollView>
         );
     }
     
 }
 const styles = StyleSheet.create({
+    // container: {
+    //     marginTop: 50,
+    //     height: Dimensions.get('window').height
+    // },
     listItem: {
-        backgroundColor: '#383838',
+        backgroundColor: 'black',
         shadowColor: 'black',
         borderTopColor: 'black',
-        borderBottomColor: 'black'
+        borderBottomColor: 'black',
     },
     listTitle: {
-        color: 'white'
-    }
+        color: 'white',
+    },
+    followbutton:{
+        // backgroundColor: '#4254f5',
+        borderColor: '#4254f5',
+        borderWidth: 1,
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        borderRadius: 10,
+        height: 35,
+        width: 80,
+
+    },
+    followingbutton:{
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        borderRadius: 10,
+        height: 35,
+        width: 80,
+        backgroundColor: '#4254f5',
+    },
+    search: {
+        backgroundColor:'#141414'
+    },
 })

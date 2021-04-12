@@ -29,19 +29,18 @@ const getAuthorizationCode = async () => {
   try {
     const credentials = await getSpotifyCredentials()
     const redirectUrl = AuthSession.getRedirectUrl();
-    // FOR SOME REASON CAN'T CONNECT TO THIS URL?
+
     const result = await AuthSession.startAsync({
       authUrl:
         'https://accounts.spotify.com/authorize' +
         '?client_id=' + credentials.clientId +
         '&response_type=code'+
         '&redirect_uri=' + encodeURIComponent(redirectUrl) +
-        (scopes ? '&scope=' + encodeURIComponent(scopes) : '')   
+        (scopes ? '&scope=' + encodeURIComponent(scopes) : '')
     });
 
-    return result.params.code 
+    return result.params.code
   } catch (err) {
-    alert(err)
     console.log(error)
     return error
   }
@@ -71,7 +70,7 @@ const getTokens = async () => {
         refresh_token: refreshToken,
         expires_in: expiresIn,
       } = responseJson;
-  
+
       const expirationTime = new Date().getTime() + expiresIn * 1000;
       await setUserData('accessToken', accessToken);
       await setUserData('refreshToken', refreshToken);
@@ -104,7 +103,7 @@ export const refreshTokens = async () => {
           refresh_token: newRefreshToken,
           expires_in: expiresIn,
         } = responseJson;
-  
+
         const expirationTime = new Date().getTime() + expiresIn * 1000;
         await setUserData('accessToken', newAccessToken);
         if (newRefreshToken) {
@@ -120,10 +119,8 @@ export const refreshTokens = async () => {
 export const getValidSPObj = async () => {
   const tokenExpirationTime = await getUserData('expirationTime');
   if (new Date().getTime() > parseInt(tokenExpirationTime)) {
-    // access token has expired, so we need to use the refresh token
     await refreshTokens();
   }
-  // console.log("past if")
   const accessToken = await getUserData('accessToken');
   var sp = new SpotifyWebAPI();
   await sp.setAccessToken(accessToken);
@@ -154,16 +151,16 @@ export default class Login extends Component {
     }
 
     loginSuccess = async (userId, display_name, image, uri) => {
-      // await setUserData('authenticated', true)
-      const id = await getUserData(userId)
+
+      const id = await getUserData('userId')
       if(id === null){
         await setUserData('userId', userId)
         await setUserData('display_name', display_name)
         await setUserData('profile_pic', image)
         await setUserData('uri', uri)
       }
-      // await setUserData("authenticated", true)
-      this.props.navigation.navigate("Home")
+
+      // this.props.navigation.navigate("Home")
     }
 
     loginFailed = async () => {
@@ -178,22 +175,23 @@ export default class Login extends Component {
         const sp = await getValidSPObj()
         const { id: userId, display_name: display_name, images: images, uri: uri} = await sp.getMe()
         let profile_pic = images.length !== 0 ? images[0].url : "https://firebasestorage.googleapis.com/v0/b/spotify-project-dd13e.appspot.com/o/default.jpg?alt=media&token=fb5e3a36-9fa7-424d-a3b5-1b9f2c79695d"
-        dbref.child("Users").orderByChild("userId").equalTo(userId).on("value", snapshot => {
+        dbref.child("Users").orderByChild("userId").equalTo(userId).once("value", snapshot => {
           if (snapshot.exists()) {
-            // USER HAS BEEN LOGGED IN BEFORE
+            dbref.child("Users/" + userId).set({ profile_pic: profile_pic })
           }else{
-            
+
             dbref.child("Users/"+userId).set({
               userId: userId,
               display_name: display_name,
               profile_pic: profile_pic,
               uri: uri,
+              followers: 0
             })
           }
 
           sp.getMyCurrentPlayingTrack().then(async track => {
-            if(Object.keys(track).length === 0){
-              alert("Log in to this Spotify account on any device to start listening!")
+            if(track === null || Object.keys(track).length === 0){
+              alert("Go into Spotify on any device and play a track")
             }else{
               if(track.currently_playing_type === "track"){
                 dbref.child("Users/"+userId+"/song").set({
@@ -206,7 +204,7 @@ export default class Login extends Component {
               }
             }
           })
-          
+
         }).then(this.loginSuccess(userId, display_name, profile_pic, uri))
         .catch(async (error) => {
           await loginFailed();
@@ -217,20 +215,9 @@ export default class Login extends Component {
       }
     }
 
-    // async componentDidMount() {
-    //   await this.loginHandler()
-    // }
-
     login = async () => {
         await this.loginHandler()
     }
-
-    // async componentDidMount() {
-    //   let auth = await getUserData('authenticated')
-    //   if(auth !== null){
-    //     this.props.navigation.navigate("Home")
-    //   }
-    // }
 
     render() {
         return (
@@ -244,7 +231,7 @@ export default class Login extends Component {
                     gradientDirection='diagonal'
                     text = 'CONNECT WITH SPOTIFY'
                     height={50}
-                    width={200}
+                    width={250}
                     impact
                     impactStyle='Light'
                     textStyle={{fontSize: 15}}
