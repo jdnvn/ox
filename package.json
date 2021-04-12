@@ -18,7 +18,7 @@
     "@react-navigation/stack": "^5.2.13",
     "aws-amplify": "^3.0.8",
     "aws-amplify-react-native": "^4.0.4",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "base-64": "^0.1.0",
     "expo": "^37.0.7",
     "expo-app-auth": "^9.0.0",
